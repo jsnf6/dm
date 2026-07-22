@@ -1,0 +1,232 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>😄 表情画廊</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #1a1a2e;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            font-family: 'Segoe UI', sans-serif;
+        }
+        h1 { color: #f0c040; margin-bottom: 10px; font-size: 28px; }
+        canvas {
+            border-radius: 16px;
+            box-shadow: 0 0 40px rgba(240,192,64,0.15);
+            background: #16213e;
+        }
+        .controls {
+            margin-top: 20px;
+            display: flex;
+            gap: 16px;
+            align-items: center;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        button {
+            padding: 10px 24px;
+            border: none;
+            border-radius: 10px;
+            background: #0f3460;
+            color: #e0e0e0;
+            font-size: 16px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        button:hover { background: #1a4a8a; transform: scale(1.05); }
+        input[type="range"] { width: 140px; }
+        label { color: #aaa; font-size: 14px; }
+        .tip { color: #888; margin-top: 12px; font-size: 13px; }
+        select {
+            padding: 8px 14px;
+            border-radius: 10px;
+            border: none;
+            background: #0f3460;
+            color: #e0e0e0;
+            font-size: 15px;
+        }
+    </style>
+</head>
+<body>
+    <h1>😄 表情画廊</h1>
+
+    <canvas id="c" width="600" height="600"></canvas>
+
+    <div class="controls">
+        <button onclick="togglePlay()">⏯ 播放/暂停</button>
+        <button onclick="randomPattern()">🎲 随机图案</button>
+        <label>密度 <input type="range" id="density" min="4" max="20" value="10" oninput="scheduleDraw()"></label>
+        <label>速度 <input type="range" id="speed" min="1" max="20" value="8" oninput="scheduleDraw()"></label>
+        <select id="mode" onchange="scheduleDraw()">
+            <option value="wave">🌊 波浪</option>
+            <option value="spiral">🌀 螺旋</option>
+            <option value="burst">💥 绽放</option>
+            <option value="rain">🌧 下雨</option>
+        </select>
+    </div>
+    <div class="tip">💡 所有画面全由 😄 相关表情构成</div>
+
+    <script>
+        const canvas = document.getElementById('c');
+        const ctx = canvas.getContext('2d');
+        const density = document.getElementById('density');
+        const speed = document.getElementById('speed');
+        const mode = document.getElementById('mode');
+
+        const EMOJIS = ['😄','😁','😊','😃','😀','😅','😂','🤣','🙂','😉','😆','😝','😜','🤪','😺','😸','😹','🥹'];
+
+        let playing = true;
+        let animFrame = null;
+        let timer = 0;
+
+        function rndEmoji() {
+            return EMOJIS[Math.floor(Math.random() * EMOJIS.length)];
+        }
+
+        function drawEmoji(ctx, emoji, x, y, size) {
+            ctx.font = size + 'px serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(emoji, x, y);
+        }
+
+        // ---- 波浪 ----
+        function drawWave(t) {
+            const cols = parseInt(density.value);
+            const rows = cols;
+            const cellW = canvas.width / cols;
+            const cellH = canvas.height / rows;
+            const spd = parseInt(speed.value) * 0.03;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            for (let r = 0; r < rows; r++) {
+                for (let c = 0; c < cols; c++) {
+                    const x = c * cellW + cellW / 2;
+                    const y = r * cellH + cellH / 2;
+                    const dx = c / cols - 0.5;
+                    const dy = r / rows - 0.5;
+                    const dist = Math.sqrt(dx*dx + dy*dy);
+                    const offset = Math.sin(dist * 6 - t * spd) * 0.4 + 0.6;
+                    const size = Math.max(12, cellW * 0.7 * offset);
+                    const i = Math.floor((offset * 0.9 + t * 0.02) % EMOJIS.length);
+                    drawEmoji(ctx, EMOJIS[i], x, y, size);
+                }
+            }
+        }
+
+        // ---- 螺旋 ----
+        function drawSpiral(t) {
+            const n = parseInt(density.value) * 6 + 20;
+            const spd = parseInt(speed.value) * 0.02;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            const cx = canvas.width / 2, cy = canvas.height / 2;
+            for (let i = 0; i < n; i++) {
+                const p = i / n;
+                const angle = p * Math.PI * 8 + t * spd;
+                const radius = p * 260 + 10;
+                const x = cx + Math.cos(angle) * radius;
+                const y = cy + Math.sin(angle) * radius;
+                const size = Math.max(10, 40 - p * 20);
+                const idx = Math.floor((p * 6 + t * 0.03) % EMOJIS.length);
+                drawEmoji(ctx, EMOJIS[idx], x, y, size);
+            }
+        }
+
+        // ---- 绽放 ----
+        function drawBurst(t) {
+            const layers = Math.max(3, parseInt(density.value) - 2);
+            const emojisPerLayer = Math.max(4, parseInt(density.value) * 2);
+            const spd = parseInt(speed.value) * 0.02;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            const cx = canvas.width / 2, cy = canvas.height / 2;
+            for (let L = 0; L < layers; L++) {
+                const p = (L + 1) / layers;
+                const radius = p * 260;
+                for (let i = 0; i < emojisPerLayer; i++) {
+                    const angle = (i / emojisPerLayer) * Math.PI * 2 + t * spd * (1 - p * 0.5);
+                    const x = cx + Math.cos(angle) * radius;
+                    const y = cy + Math.sin(angle) * radius;
+                    const size = Math.max(12, 50 - p * 25 + Math.sin(t * 0.05 + i) * 4);
+                    const idx = Math.floor((p * 3 + i * 0.5 + t * 0.02) % EMOJIS.length);
+                    drawEmoji(ctx, EMOJIS[idx], x, y, size);
+                }
+            }
+            drawEmoji(ctx, EMOJIS[Math.floor(t * 0.04) % EMOJIS.length], cx, cy, 60);
+        }
+
+        // ---- 下雨 ----
+        function drawRain(t) {
+            const cols = parseInt(density.value);
+            const rows = parseInt(density.value) * 2;
+            const cellW = canvas.width / cols;
+            const spd = parseInt(speed.value) * 0.04;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            for (let c = 0; c < cols; c++) {
+                for (let r = 0; r < rows; r++) {
+                    const x = c * cellW + cellW / 2;
+                    const baseY = (r / rows) * canvas.height;
+                    const offsetY = ((t * spd + r * 0.3 + c * 0.7) % 1) * canvas.height;
+                    const y = (baseY + offsetY) % canvas.height;
+                    const size = Math.max(10, cellW * 0.6);
+                    const idx = Math.floor((r + c + t * 0.03) % EMOJIS.length);
+                    const alpha = 1 - (y / canvas.height) * 0.4;
+                    ctx.globalAlpha = alpha;
+                    drawEmoji(ctx, EMOJIS[idx], x, y, size);
+                }
+            }
+            ctx.globalAlpha = 1;
+        }
+
+        const DRAW_FNS = {
+            wave: drawWave,
+            spiral: drawSpiral,
+            burst: drawBurst,
+            rain: drawRain,
+        };
+
+        function draw(t) {
+            const fn = DRAW_FNS[mode.value] || drawWave;
+            fn(t);
+        }
+
+        function animate(time) {
+            if (!playing) {
+                animFrame = requestAnimationFrame(animate);
+                return;
+            }
+            timer += 0.5;
+            draw(timer);
+            animFrame = requestAnimationFrame(animate);
+        }
+
+        function togglePlay() {
+            playing = !playing;
+        }
+
+        function randomPattern() {
+            const modes = ['wave', 'spiral', 'burst', 'rain'];
+            mode.value = modes[Math.floor(Math.random() * modes.length)];
+            density.value = 6 + Math.floor(Math.random() * 12);
+            speed.value = 3 + Math.floor(Math.random() * 15);
+            scheduleDraw();
+        }
+
+        let scheduleTimer = null;
+        function scheduleDraw() {
+            if (scheduleTimer) clearTimeout(scheduleTimer);
+        }
+
+        animate(0);
+    </script>
+</body>
+</html>

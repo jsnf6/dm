@@ -1,0 +1,24 @@
+﻿# IDE
+.idea/
+*.iml
+.vscode/
+
+# Build
+target/
+dist/
+node_modules/
+*.class
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+.env.local
+
+# Damai backup git
+damai/.git_bak/
