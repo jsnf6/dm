@@ -25,9 +25,8 @@ public class ConversationService {
     @Autowired
     private MessageMapper messageMapper;
 
-
     public ApiResponse<List<ConversationDto>> getConversations() {
-        String userid= UserContext.getUserId();
+        String userid = UserContext.getUserId();
         LambdaQueryWrapper<Conversation> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(Conversation::getUserId, userid)
                 .orderByDesc(Conversation::getUpdatedAt);
@@ -45,7 +44,6 @@ public class ConversationService {
 
     public ApiResponse<List<MessageDto>> getConversationdetail(String id) {
         String userId = UserContext.getUserId();
-        // 校验归属
         Conversation conv = conversationMapper.selectById(id);
         if (conv == null || !conv.getUserId().equals(userId)) {
             return ApiResponse.error("会话不存在");
@@ -58,9 +56,11 @@ public class ConversationService {
 
         List<MessageDto> dtos = messages.stream().map(m -> {
             MessageDto dto = new MessageDto();
+            dto.setId(m.getId());
             dto.setRole(m.getRole());
             dto.setContent(m.getContent());
             dto.setTime(m.getCreateTime());
+            dto.setSatisfaction(m.getSatisfaction());
             return dto;
         }).collect(Collectors.toList());
         return ApiResponse.ok(dtos);
@@ -72,6 +72,16 @@ public class ConversationService {
             return ApiResponse.error("无权限");
         }
         conversationMapper.deleteById(id);
+        return ApiResponse.ok(null);
+    }
+
+    public ApiResponse<Void> updateSatisfaction(Long messageId, Integer satisfaction) {
+        AiMessage msg = messageMapper.selectById(messageId);
+        if (msg == null) {
+            return ApiResponse.error("消息不存在");
+        }
+        msg.setSatisfaction(satisfaction);
+        messageMapper.updateById(msg);
         return ApiResponse.ok(null);
     }
 }

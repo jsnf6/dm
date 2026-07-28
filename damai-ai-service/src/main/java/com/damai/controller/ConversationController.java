@@ -1,17 +1,16 @@
 package com.damai.controller;
 
-
 import com.damai.common.ApiResponse;
 import com.damai.entity.ConversationDto;
 import com.damai.entity.MessageDto;
 import com.damai.service.ConversationService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.apache.ibatis.annotations.Delete;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/ai")
@@ -38,5 +37,12 @@ public class ConversationController {
     public ApiResponse<Void> deleteConversation(@PathVariable String id) {
         conversationService.delConversationdetail(id);
         return ApiResponse.ok(null);
+    }
+
+    @Operation(summary = "消息满意度反馈")
+    @PutMapping("/message/{messageId}/satisfaction")
+    public ApiResponse<Void> updateSatisfaction(@PathVariable Long messageId, @RequestBody Map<String, Integer> body) {
+        Integer satisfaction = body.get("satisfaction");
+        return conversationService.updateSatisfaction(messageId, satisfaction);
     }
 }

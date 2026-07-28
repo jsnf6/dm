@@ -4,7 +4,9 @@ import lombok.Data;
 
 @Data
 public class MessageDto {
-    private String role;     // user / ai
+    private Long id;
+    private String role;
     private String content;
-    private String time;     // "14:30"
+    private String time;
+    private Integer satisfaction;
 }

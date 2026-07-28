@@ -14,4 +14,5 @@ public class AiMessage {
     private String content;
     private String createTime;
     private LocalDateTime createAt;
+    private Integer satisfaction;
 }

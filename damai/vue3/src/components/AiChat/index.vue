@@ -73,6 +73,8 @@
               <div v-else class="message-text" v-html="formatMessage(msg.content)"></div>
               <div class="message-time">{{ msg.time }}</div>
               <div v-if="msg.role === 'ai' && msg.content !== '__LOADING__' && !isLoading" class="msg-actions">
+                <span :class="[`msg-feedback`, { active: msg.satisfaction === 1 }]" @click="submitFeedback(msg, 1)" title="Useful"><el-icon :size="14"><CaretTop /></el-icon></span>
+                <span :class="[`msg-feedback`, { active: msg.satisfaction === 0 }]" @click="submitFeedback(msg, 0)" title="Not useful"><el-icon :size="14"><CaretBottom /></el-icon></span>
                 <span class="msg-copy" @click="copyMessage(msg.content)"><el-icon :size="14"><DocumentCopy /></el-icon></span>
                 <span class="msg-refresh" @click="regenerate(idx)"><el-icon :size="14"><Refresh /></el-icon></span>
               </div>
@@ -97,8 +99,8 @@
 <script setup>
 import { ref, reactive, nextTick, watch, onMounted, onUnmounted, computed } from 'vue'
 import { ElMessage } from 'element-plus'
-import { ChatDotRound, Service, Close, Delete, UserFilled, Promotion, Plus, Refresh, Expand, DocumentCopy } from '@element-plus/icons-vue'
-import { sendAiMessageStream, getConversations, getConversationMessages, deleteConversation } from '@/api/aiChat'
+import { ChatDotRound, Service, Close, Delete, UserFilled, Promotion, Plus, Refresh, Expand, DocumentCopy, CaretTop, CaretBottom } from '@element-plus/icons-vue'
+import { sendAiMessageStream, getConversations, getConversationMessages, deleteConversation, submitSatisfaction } from '@/api/aiChat'
 import useUserStore from '@/store/modules/user'
 import { marked } from 'marked'
 
@@ -265,7 +267,7 @@ function newConversation() {
   sessionId.value = 'ai_chat_' + Date.now() + '_' + Math.random().toString(36).substring(2, 11)
   const now = new Date()
   const timeStr = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0')
-  messages.push({ role: 'ai', content: 'New conversation started. How can I help you?', time: timeStr })
+  messages.push({ role: 'ai', content: 'New conversation started. How can I help you?', time: timeStr, streaming: false })
 }
 
 function sendQuickQuestion(question) { inputText.value = question; sendMessage() }
@@ -298,7 +300,7 @@ async function sendMessage() {
     }
     const doneTime = new Date()
     aiMsg.time = doneTime.getHours().toString().padStart(2, '0') + ':' + doneTime.getMinutes().toString().padStart(2, '0')
-    fetchConversations()
+    syncMessageIds()
   } catch (error) {
     if (error && error.name === 'AbortError') {
       const idx = messages.indexOf(aiMsg)
@@ -342,7 +344,7 @@ function regenerate(aiIdx) {
       }
       const doneTime = new Date()
       aiMsg.time = doneTime.getHours().toString().padStart(2, '0') + ':' + doneTime.getMinutes().toString().padStart(2, '0')
-      fetchConversations()
+      syncMessageIds()
     } catch (error) {
       if (error && error.name === 'AbortError') return
       if (aiMsg.content === '__LOADING__' || aiMsg.content === '') {
@@ -357,6 +359,13 @@ function regenerate(aiIdx) {
   })
 }
 
+function submitFeedback(msg, val) {
+  if (!msg.id) return
+  submitSatisfaction(msg.id, val).then(() => {
+    msg.satisfaction = val
+  }).catch(() => {})
+}
+
 function copyMessage(content) {
   navigator.clipboard.writeText(content).then(() => {
     ElMessage.success('Copied!')
@@ -366,6 +375,24 @@ function formatMessage(content) {
   if (!content) return ''
   marked.setOptions({ breaks: true, gfm: true })
   return marked.parse(content)
+}
+
+async function syncMessageIds() {
+  fetchConversations()
+  try {
+    const res = await getConversationMessages(sessionId.value)
+    if (res.code === 0 && Array.isArray(res.data)) {
+      const msgMap = {}
+      res.data.forEach(m => { if (m.id) msgMap[m.content + "|" + m.role + "|" + m.time] = m })
+      messages.forEach(msg => {
+        const key = msg.content + "|" + msg.role + "|" + msg.time
+        if (!msg.id && msgMap[key]) {
+          msg.id = msgMap[key].id
+          msg.satisfaction = msgMap[key].satisfaction
+        }
+      })
+    }
+  } catch (e) { /* ignore */ }
 }
 
 function scrollToBottom() {
@@ -492,6 +519,11 @@ watch(chatVisible, async (val) => { if (val) { await nextTick(); scrollToBottom(
 .message-text { padding: 10px 14px; font-size: 13px; line-height: 1.6; word-break: break-word; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
 .message-time { font-size: 11px; color: #c0c4cc; margin-top: 4px; padding: 0 4px; }
 .message-user .message-time { text-align: right; }
+.msg-feedback {
+  cursor: pointer; color: #c0c4cc; padding: 2px; border-radius: 4px;
+  &:hover { color: rgba(255,55,29,0.85); background: rgba(255,55,29,0.08); }
+  &.active { color: rgba(255,55,29,0.85); }
+}
 .msg-actions { display: flex; gap: 6px; margin-top: 6px; }
 .msg-copy, .msg-refresh {
   cursor: pointer; color: #c0c4cc; padding: 2px; border-radius: 4px;
