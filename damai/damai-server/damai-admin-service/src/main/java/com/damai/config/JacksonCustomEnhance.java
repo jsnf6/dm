@@ -32,9 +32,9 @@ import java.util.TimeZone;
 
 
 /**
- * @program: 极度真实还原大麦网高并发实战项目。 添加 阿星不是程序员 微信，添加时备注 大麦 来获取项目的完整资料 
+ * @program: 
  * @description: 定制对象字段
- * @author: 阿星不是程序员
+ * 
  **/
 public class JacksonCustomEnhance implements Jackson2ObjectMapperBuilderCustomizer, Ordered {
 

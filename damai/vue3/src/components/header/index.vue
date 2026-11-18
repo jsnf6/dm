@@ -41,6 +41,7 @@
       <div class="recommendHeader" v-if="isShowHeader">
         <router-link to="/index" class="routeHome" tag="div">首页</router-link>
         <router-link to="/allType/index" class="routeType" tag="div">分类</router-link>
+        <router-link to="/aiChat/index" class="routeAi" tag="div"><el-icon :size="16" style="margin-right:4px"><Service /></el-icon>AI</router-link>
       </div>
       <div class="searchHeader" v-if="isShowHeader">
         <el-input

@@ -37,9 +37,9 @@ import java.util.Map;
 
 
 /**
- * @program: 极度真实还原大麦网高并发实战项目。 添加 阿星不是程序员 微信，添加时备注 大麦 来获取项目的完整资料 
+ * @program: 
  * @description: 大麦项目自定义 JSON 日志布局
- * @author: 阿星不是程序员
+ * 
  **/
 @Plugin(name = "DamaiJsonLayout", category = Node.CATEGORY, elementType = Layout.ELEMENT_TYPE, printObject = true)
 public final class DamaiJsonLayout extends BaseJsonLayout {

@@ -125,6 +125,12 @@ export const constantRoutes = [
         name: 'demo',
         component: () => import('@/views/demo/index'),
     },
+
+    {
+        path: '/aiChat/index',
+        name: 'AiChat',
+        component: () => import('@/views/aiChat/index'),
+    },
 ]
 const router = createRouter({
     history: createWebHistory(),

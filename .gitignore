@@ -1,4 +1,4 @@
-﻿# IDE
+# IDE
 .idea/
 *.iml
 .vscode/
@@ -22,3 +22,12 @@ Thumbs.db
 
 # Damai backup git
 damai/.git_bak/
+
+# Local sharding demo artifacts
+sharding-demo/logs/
+sharding-demo/client-private-key.txt
+
+# Scratch scripts
+damai/vue3/fix_*.cjs
+damai/vue3/fix_vue.py
+damai/vue3/temp_feedback.txt

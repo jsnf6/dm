@@ -25,9 +25,9 @@ import static com.damai.repeatexecutelimit.constant.RepeatExecuteLimitConstant.S
 
 /**
  /**
- * @program: 极度真实还原大麦网高并发实战项目。 添加 阿星不是程序员 微信，添加时备注 大麦 来获取项目的完整资料 
+ * @program: 
  * @description: 防重复幂等 切面
- * @author: 阿星不是程序员
+ * 
  **/
 @Slf4j
 @Aspect
@@ -42,6 +42,7 @@ public class RepeatExecuteLimitAspect {
     private final ServiceLockFactory serviceLockFactory;
     
     private final RedissonDataHandle redissonDataHandle;
+
     
     
     @Around("@annotation(repeatLimit)")
